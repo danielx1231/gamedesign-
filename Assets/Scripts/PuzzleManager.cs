@@ -47,16 +47,20 @@ public class PuzzleManager : MonoBehaviour
     private void Success()
     {
         isFinished = true;
-        Debug.Log("Puzzle solved! Flash all stones.");
+        Debug.Log("解密成功！执行闪烁效果");
 
-        // 全部锁定并闪烁 4 次
         PuzzleButton[] allButtons = FindObjectsOfType<PuzzleButton>();
-        foreach (var btn in allButtons)
+        foreach (var btn in allButtons) btn.LockAndFlash();
+
+        // ✅ 切换BGM（淡出→换歌→淡入）
+        if (BGMController.Instance == null)
+            Debug.LogError("BGMController.Instance is NULL! Make sure BGMController exists in the scene.");
+        else
         {
-            btn.LockAndFlash();
+            Debug.Log("Calling SwitchToAfterPuzzleBGM()");
+            BGMController.Instance.SwitchToAfterPuzzleBGM();
         }
 
-        // 触发 runeStone 动画
         if (runeStone != null)
         {
             Animator anim = runeStone.GetComponent<Animator>();
