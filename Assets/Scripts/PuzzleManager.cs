@@ -3,6 +3,8 @@ using System.Collections.Generic;
 
 public class PuzzleManager : MonoBehaviour
 {
+
+    public FloatPlatform floatingPlatform;
     public int[] correctOrder = { 0, 1, 2, 3 };
 
     public GameObject runeStone; // 成功后触发动画用
@@ -66,5 +68,6 @@ public class PuzzleManager : MonoBehaviour
             Animator anim = runeStone.GetComponent<Animator>();
             if (anim != null) anim.SetTrigger("Active");
         }
+        if (floatingPlatform != null) floatingPlatform.Activate();
     }
 }
