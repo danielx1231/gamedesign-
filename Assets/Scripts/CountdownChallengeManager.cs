@@ -9,12 +9,21 @@ public class CountdownChallengeManager : MonoBehaviour
     public TextMeshProUGUI countdownText;
 
     [Header("Timer")]
-    public float countdownDuration = 179f; // 2 minutes 59 seconds
+    public float countdownDuration = 179f;
     public float currentTime;
+
+    [Header("Checkpoint")]
+    public Transform player;
+    public Transform checkpointPoint;
 
     private bool isPopupShowing = false;
     private bool isCountingDown = false;
     private float inputDelay = 0.2f;
+
+    private const string HasCheckpointKey = "HasCountdownCheckpoint";
+    private const string CheckpointXKey = "CountdownCheckpointX";
+    private const string CheckpointYKey = "CountdownCheckpointY";
+    private const string CheckpointZKey = "CountdownCheckpointZ";
 
     void Start()
     {
@@ -51,7 +60,7 @@ public class CountdownChallengeManager : MonoBehaviour
             {
                 currentTime = 0f;
                 UpdateTimerUI();
-                RestartLevel();
+                RestartLevelFromCheckpoint();
                 return;
             }
 
@@ -61,6 +70,8 @@ public class CountdownChallengeManager : MonoBehaviour
 
     public void ShowCountdownPopup()
     {
+        SaveCheckpoint();
+
         isPopupShowing = true;
         inputDelay = 0.2f;
 
@@ -139,6 +150,33 @@ public class CountdownChallengeManager : MonoBehaviour
         }
     }
 
+    private void SaveCheckpoint()
+    {
+        Vector3 savePosition;
+
+        if (checkpointPoint != null)
+        {
+            savePosition = checkpointPoint.position;
+        }
+        else if (player != null)
+        {
+            savePosition = player.position;
+        }
+        else
+        {
+            Debug.LogWarning("No player or checkpoint point assigned. Checkpoint not saved.");
+            return;
+        }
+
+        PlayerPrefs.SetInt(HasCheckpointKey, 1);
+        PlayerPrefs.SetFloat(CheckpointXKey, savePosition.x);
+        PlayerPrefs.SetFloat(CheckpointYKey, savePosition.y);
+        PlayerPrefs.SetFloat(CheckpointZKey, savePosition.z);
+        PlayerPrefs.Save();
+
+        Debug.Log("Countdown checkpoint saved at: " + savePosition);
+    }
+
     private void UpdateTimerUI()
     {
         if (countdownText == null)
@@ -152,7 +190,7 @@ public class CountdownChallengeManager : MonoBehaviour
         countdownText.text = minutes.ToString("00") + ":" + seconds.ToString("00");
     }
 
-    private void RestartLevel()
+    private void RestartLevelFromCheckpoint()
     {
         Time.timeScale = 1f;
 
