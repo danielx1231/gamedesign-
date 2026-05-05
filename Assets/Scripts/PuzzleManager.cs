@@ -3,15 +3,19 @@ using System.Collections.Generic;
 
 public class PuzzleManager : MonoBehaviour
 {
-
+    [Header("Puzzle Settings")]
     public FloatPlatform floatingPlatform;
     public int[] correctOrder = { 0, 1, 2, 3 };
 
-    public GameObject runeStone; // 成功后触发动画用
+    [Header("Success Objects")]
+    public GameObject runeStone;
+
+    [Header("Countdown System")]
+    public CountdownChallengeManager countdownManager;
+
     private List<int> playerInput = new List<int>();
     private bool isFinished = false;
 
-    // Button 只需要调用这个，不要再传 callback
     public void OnButtonPress(int buttonIndex)
     {
         if (isFinished) return;
@@ -38,8 +42,8 @@ public class PuzzleManager : MonoBehaviour
     {
         playerInput.Clear();
 
-        // 全部渐隐并允许重新按（按钮脚本里已经把 isLit 设回 false）
         PuzzleButton[] allButtons = FindObjectsOfType<PuzzleButton>();
+
         foreach (var btn in allButtons)
         {
             btn.TurnOffGlow();
@@ -49,25 +53,37 @@ public class PuzzleManager : MonoBehaviour
     private void Success()
     {
         isFinished = true;
-        Debug.Log("解密成功！执行闪烁效果");
+        Debug.Log("Puzzle solved.");
 
         PuzzleButton[] allButtons = FindObjectsOfType<PuzzleButton>();
-        foreach (var btn in allButtons) btn.LockAndFlash();
 
-        // ✅ 切换BGM（淡出→换歌→淡入）
-        if (BGMController.Instance == null)
-            Debug.LogError("BGMController.Instance is NULL! Make sure BGMController exists in the scene.");
-        else
+        foreach (var btn in allButtons)
         {
-            Debug.Log("Calling SwitchToAfterPuzzleBGM()");
-            BGMController.Instance.SwitchToAfterPuzzleBGM();
+            btn.LockAndFlash();
         }
 
         if (runeStone != null)
         {
             Animator anim = runeStone.GetComponent<Animator>();
-            if (anim != null) anim.SetTrigger("Active");
+
+            if (anim != null)
+            {
+                anim.SetTrigger("Active");
+            }
         }
-        if (floatingPlatform != null) floatingPlatform.Activate();
+
+        if (floatingPlatform != null)
+        {
+            floatingPlatform.Activate();
+        }
+
+        if (countdownManager != null)
+        {
+            countdownManager.ShowCountdownPopup();
+        }
+        else
+        {
+            Debug.LogWarning("CountdownChallengeManager is not assigned in PuzzleManager.");
+        }
     }
 }
