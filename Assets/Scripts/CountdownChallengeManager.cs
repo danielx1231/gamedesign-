@@ -20,21 +20,18 @@ public class CountdownChallengeManager : MonoBehaviour
     private bool isCountingDown = false;
     private float inputDelay = 0.2f;
 
-    private const string HasCheckpointKey = "HasCountdownCheckpoint";
-    private const string CheckpointXKey = "CountdownCheckpointX";
-    private const string CheckpointYKey = "CountdownCheckpointY";
-    private const string CheckpointZKey = "CountdownCheckpointZ";
-
     void Start()
     {
         if (popupPanel != null)
-        {
             popupPanel.SetActive(false);
-        }
 
         if (countdownText != null)
-        {
             countdownText.gameObject.SetActive(false);
+
+        if (CountdownCheckpointData.shouldShowPopupAfterReload)
+        {
+            CountdownCheckpointData.shouldShowPopupAfterReload = false;
+            ShowCountdownPopup(false);
         }
     }
 
@@ -70,7 +67,15 @@ public class CountdownChallengeManager : MonoBehaviour
 
     public void ShowCountdownPopup()
     {
-        SaveCheckpoint();
+        ShowCountdownPopup(true);
+    }
+
+    private void ShowCountdownPopup(bool saveCheckpointNow)
+    {
+        if (saveCheckpointNow)
+        {
+            SaveCheckpoint();
+        }
 
         isPopupShowing = true;
         inputDelay = 0.2f;
@@ -78,14 +83,10 @@ public class CountdownChallengeManager : MonoBehaviour
         Time.timeScale = 0f;
 
         if (popupPanel != null)
-        {
             popupPanel.SetActive(true);
-        }
 
         if (countdownText != null)
-        {
             countdownText.gameObject.SetActive(false);
-        }
     }
 
     private void ClosePopupAndStartCountdown()
@@ -93,9 +94,7 @@ public class CountdownChallengeManager : MonoBehaviour
         isPopupShowing = false;
 
         if (popupPanel != null)
-        {
             popupPanel.SetActive(false);
-        }
 
         Time.timeScale = 1f;
 
@@ -108,9 +107,7 @@ public class CountdownChallengeManager : MonoBehaviour
         isCountingDown = true;
 
         if (countdownText != null)
-        {
             countdownText.gameObject.SetActive(true);
-        }
 
         UpdateTimerUI();
 
@@ -126,17 +123,12 @@ public class CountdownChallengeManager : MonoBehaviour
 
     public void AddTime(float amount)
     {
-        if (!isCountingDown)
-        {
-            return;
-        }
+        if (!isCountingDown) return;
 
         currentTime += amount;
 
         if (currentTime > countdownDuration)
-        {
             currentTime = countdownDuration;
-        }
 
         UpdateTimerUI();
 
@@ -168,21 +160,14 @@ public class CountdownChallengeManager : MonoBehaviour
             return;
         }
 
-        PlayerPrefs.SetInt(HasCheckpointKey, 1);
-        PlayerPrefs.SetFloat(CheckpointXKey, savePosition.x);
-        PlayerPrefs.SetFloat(CheckpointYKey, savePosition.y);
-        PlayerPrefs.SetFloat(CheckpointZKey, savePosition.z);
-        PlayerPrefs.Save();
+        CountdownCheckpointData.SaveCheckpoint(savePosition);
 
         Debug.Log("Countdown checkpoint saved at: " + savePosition);
     }
 
     private void UpdateTimerUI()
     {
-        if (countdownText == null)
-        {
-            return;
-        }
+        if (countdownText == null) return;
 
         int minutes = Mathf.FloorToInt(currentTime / 60f);
         int seconds = Mathf.FloorToInt(currentTime % 60f);
@@ -193,6 +178,8 @@ public class CountdownChallengeManager : MonoBehaviour
     private void RestartLevelFromCheckpoint()
     {
         Time.timeScale = 1f;
+
+        CountdownCheckpointData.PrepareRespawn();
 
         Scene currentScene = SceneManager.GetActiveScene();
         SceneManager.LoadScene(currentScene.name);
