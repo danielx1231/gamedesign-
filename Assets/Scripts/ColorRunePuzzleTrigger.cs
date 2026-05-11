@@ -8,8 +8,7 @@ public class ColorRunePuzzleTrigger : MonoBehaviour
 
     [Header("Switch Animation")]
     public Animator switchAnimator;
-    public string switchOnStateName = "Switch on";
-    public string switchOffStateName = "Switch off";
+    public string openBoolName = "Open";
 
     [Header("Interaction")]
     public KeyCode interactKey = KeyCode.E;
@@ -28,7 +27,7 @@ public class ColorRunePuzzleTrigger : MonoBehaviour
             switchAnimator = GetComponent<Animator>();
         }
 
-        PlaySwitchOff();
+        SetSwitchOff();
     }
 
     private void Update()
@@ -47,7 +46,7 @@ public class ColorRunePuzzleTrigger : MonoBehaviour
     {
         isInteracting = true;
 
-        PlaySwitchOn();
+        SetSwitchOn();
 
         bool correct = false;
 
@@ -69,7 +68,7 @@ public class ColorRunePuzzleTrigger : MonoBehaviour
                 yield return null;
             }
 
-            PlaySwitchOn();
+            SetSwitchOn();
 
             isInteracting = false;
             yield break;
@@ -77,7 +76,7 @@ public class ColorRunePuzzleTrigger : MonoBehaviour
 
         yield return new WaitForSeconds(switchOffDelay);
 
-        PlaySwitchOff();
+        SetSwitchOff();
 
         while (puzzleManager != null && puzzleManager.IsBusy())
         {
@@ -87,18 +86,18 @@ public class ColorRunePuzzleTrigger : MonoBehaviour
         isInteracting = false;
     }
 
-    private void PlaySwitchOn()
+    private void SetSwitchOn()
     {
         if (switchAnimator == null) return;
 
-        switchAnimator.Play(switchOnStateName, 0, 0f);
+        switchAnimator.SetBool(openBoolName, true);
     }
 
-    private void PlaySwitchOff()
+    private void SetSwitchOff()
     {
         if (switchAnimator == null) return;
 
-        switchAnimator.Play(switchOffStateName, 0, 0f);
+        switchAnimator.SetBool(openBoolName, false);
     }
 
     private void OnTriggerEnter2D(Collider2D other)

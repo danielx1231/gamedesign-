@@ -86,6 +86,7 @@ public class ColorRunePuzzleManager : MonoBehaviour
             if (rune != null)
             {
                 rune.RestoreCurrentColor();
+                rune.LockRune();
             }
         }
 
