@@ -571,10 +571,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f6cf6be51d8a12a459694cdb3ae27054, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  completionPanel: {fileID: 0}
-  showCompletionOnPlayerEnter: 0
-  pauseWhenCompleted: 1
-  playerTag: Player
 --- !u!1 &146625009
 GameObject:
   m_ObjectHideFlags: 0
@@ -2254,12 +2250,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c528f64261dbf4b48b9d0c07f55ec868, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  musicSource: {fileID: 1814641505}
-  bgmBeforePuzzle: {fileID: 8300000, guid: 7eaafe93f6e0a1c499d152d55df01ce0, type: 3}
-  bgmAfterPuzzle: {fileID: 8300000, guid: a46513b426035cb418a4470b6d5de1b0, type: 3}
-  fadeOutTime: 1.2
-  fadeInTime: 1.2
-  targetVolume: 0.35
+  beforePuzzleBGM: {fileID: 0}
+  afterPuzzleBGM: {fileID: 0}
+  bgmVolume: 0.35
+  fadeDuration: 1
 --- !u!82 &1814641505
 AudioSource:
   m_ObjectHideFlags: 0
@@ -2270,8 +2264,8 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 0}
-  m_PlayOnAwake: 0
+  m_audioClip: {fileID: 8300000, guid: 596e0f53d0760684897f73aa6d85324a, type: 3}
+  m_PlayOnAwake: 1
   m_Volume: 0.174
   m_Pitch: 1
   Loop: 1
