@@ -16,6 +16,16 @@ public class PuzzleManager : MonoBehaviour
     private List<int> playerInput = new List<int>();
     private bool isFinished = false;
 
+    private void Start()
+    {
+        // 如果之前已经解锁过倒计时挑战，说明这是从 checkpoint 复活/重载场景
+        // 这里恢复谜题完成后的机关状态，但不再次弹出提示窗口
+        if (CountdownCheckpointData.challengeUnlocked)
+        {
+            RestoreSolvedState();
+        }
+    }
+
     public void OnButtonPress(int buttonIndex)
     {
         if (isFinished) return;
@@ -55,6 +65,9 @@ public class PuzzleManager : MonoBehaviour
         isFinished = true;
         Debug.Log("Puzzle solved.");
 
+        // 保存：这个挑战已经被解锁
+        CountdownCheckpointData.UnlockChallenge();
+
         PuzzleButton[] allButtons = FindObjectsOfType<PuzzleButton>();
 
         foreach (var btn in allButtons)
@@ -62,6 +75,37 @@ public class PuzzleManager : MonoBehaviour
             btn.LockAndFlash();
         }
 
+        ActivateSolvedMechanisms();
+
+        if (countdownManager != null)
+        {
+            countdownManager.ShowCountdownPopup();
+        }
+        else
+        {
+            Debug.LogWarning("CountdownChallengeManager is not assigned in PuzzleManager.");
+        }
+    }
+
+    private void RestoreSolvedState()
+    {
+        isFinished = true;
+        playerInput.Clear();
+
+        Debug.Log("PuzzleManager restored solved state.");
+
+        PuzzleButton[] allButtons = FindObjectsOfType<PuzzleButton>();
+
+        foreach (var btn in allButtons)
+        {
+            btn.LockAndFlash();
+        }
+
+        ActivateSolvedMechanisms();
+    }
+
+    private void ActivateSolvedMechanisms()
+    {
         if (runeStone != null)
         {
             Animator anim = runeStone.GetComponent<Animator>();
@@ -75,15 +119,6 @@ public class PuzzleManager : MonoBehaviour
         if (floatingPlatform != null)
         {
             floatingPlatform.Activate();
-        }
-
-        if (countdownManager != null)
-        {
-            countdownManager.ShowCountdownPopup();
-        }
-        else
-        {
-            Debug.LogWarning("CountdownChallengeManager is not assigned in PuzzleManager.");
         }
     }
 }

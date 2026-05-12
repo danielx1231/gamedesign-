@@ -1,171 +1,171 @@
-using UnityEngine;
-using UnityEngine.SceneManagement;
+﻿using UnityEngine;
 using TMPro;
+using UnityEngine.SceneManagement;
 
 public class CountdownChallengeManager : MonoBehaviour
 {
     [Header("UI")]
     public GameObject popupPanel;
-    public TextMeshProUGUI countdownText;
+    public TMP_Text countdownText;
 
     [Header("Timer")]
     public float countdownDuration = 179f;
-    public float currentTime;
+    private float currentTime;
+    private bool countdownStarted = false;
+    private bool waitingForInput = false;
 
     [Header("Checkpoint")]
     public Transform player;
     public Transform checkpointPoint;
 
-    private bool isPopupShowing = false;
-    private bool isCountingDown = false;
-    private float inputDelay = 0.2f;
+    [Header("BGM")]
+    public AudioSource countdownBGMSource;
 
-    void Start()
+    private void Start()
     {
         if (popupPanel != null)
+        {
             popupPanel.SetActive(false);
+        }
 
         if (countdownText != null)
-            countdownText.gameObject.SetActive(false);
-
-        if (CountdownCheckpointData.shouldShowPopupAfterReload)
         {
-            CountdownCheckpointData.shouldShowPopupAfterReload = false;
-            ShowCountdownPopup(false);
+            countdownText.gameObject.SetActive(false);
+        }
+
+        // 如果是倒计时结束 / 死亡后重新加载场景
+        // 直接从挑战开始状态恢复，不再显示弹窗
+        if (CountdownCheckpointData.shouldStartChallengeOnLoad)
+        {
+            CountdownCheckpointData.ConsumeChallengeStartFlag();
+            StartCountdownImmediatelyAfterReload();
         }
     }
 
-    void Update()
+    private void Update()
     {
-        if (isPopupShowing)
+        if (waitingForInput)
         {
-            inputDelay -= Time.unscaledDeltaTime;
-
-            if (inputDelay <= 0f && Input.anyKeyDown)
+            if (Input.anyKeyDown)
             {
-                ClosePopupAndStartCountdown();
+                StartCountdown();
             }
-
-            return;
         }
 
-        if (isCountingDown)
+        if (countdownStarted)
         {
             currentTime -= Time.deltaTime;
 
             if (currentTime <= 0f)
             {
                 currentTime = 0f;
-                UpdateTimerUI();
-                RestartLevelFromCheckpoint();
+                UpdateCountdownUI();
+                RestartFromCheckpoint();
                 return;
             }
 
-            UpdateTimerUI();
+            UpdateCountdownUI();
         }
     }
 
     public void ShowCountdownPopup()
     {
-        ShowCountdownPopup(true);
-    }
-
-    private void ShowCountdownPopup(bool saveCheckpointNow)
-    {
-        if (saveCheckpointNow)
+        if (checkpointPoint != null)
         {
-            SaveCheckpoint();
+            CountdownCheckpointData.SaveCheckpoint(checkpointPoint.position);
+        }
+        else if (player != null)
+        {
+            CountdownCheckpointData.SaveCheckpoint(player.position);
         }
 
-        isPopupShowing = true;
-        inputDelay = 0.2f;
+        CountdownCheckpointData.UnlockChallenge();
 
-        Time.timeScale = 0f;
+        waitingForInput = true;
+        countdownStarted = false;
 
         if (popupPanel != null)
+        {
             popupPanel.SetActive(true);
+        }
 
         if (countdownText != null)
+        {
             countdownText.gameObject.SetActive(false);
-    }
-
-    private void ClosePopupAndStartCountdown()
-    {
-        isPopupShowing = false;
-
-        if (popupPanel != null)
-            popupPanel.SetActive(false);
-
-        Time.timeScale = 1f;
-
-        StartCountdown();
+        }
     }
 
     private void StartCountdown()
     {
+        waitingForInput = false;
+        countdownStarted = true;
         currentTime = countdownDuration;
-        isCountingDown = true;
+
+        if (popupPanel != null)
+        {
+            popupPanel.SetActive(false);
+        }
 
         if (countdownText != null)
+        {
             countdownText.gameObject.SetActive(true);
+        }
 
-        UpdateTimerUI();
+        UpdateCountdownUI();
+        StartCountdownBGMFromBeginning();
+    }
 
+    private void StartCountdownImmediatelyAfterReload()
+    {
+        waitingForInput = false;
+        countdownStarted = true;
+        currentTime = countdownDuration;
+
+        if (popupPanel != null)
+        {
+            popupPanel.SetActive(false);
+        }
+
+        if (countdownText != null)
+        {
+            countdownText.gameObject.SetActive(true);
+        }
+
+        UpdateCountdownUI();
+        StartCountdownBGMFromBeginning();
+
+        Debug.Log("Countdown restarted from checkpoint state.");
+    }
+
+    private void StartCountdownBGMFromBeginning()
+    {
+        // 如果你原来的 BGMController 负责切换倒计时音乐，保留这段
         if (BGMController.Instance != null)
         {
             BGMController.Instance.SwitchToAfterPuzzleBGM();
         }
-        else
+
+        // 如果你拖了 AudioSource，这里会强制从音乐开头播放
+        if (countdownBGMSource != null)
         {
-            Debug.LogWarning("BGMController.Instance is NULL. Countdown starts without BGM switch.");
+            countdownBGMSource.time = 0f;
+
+            if (!countdownBGMSource.isPlaying)
+            {
+                countdownBGMSource.Play();
+            }
         }
     }
 
-    public void AddTime(float amount)
+    private void RestartFromCheckpoint()
     {
-        if (!isCountingDown) return;
+        CountdownCheckpointData.PrepareChallengeRestart();
 
-        currentTime += amount;
-
-        if (currentTime > countdownDuration)
-            currentTime = countdownDuration;
-
-        UpdateTimerUI();
-
-        if (BGMController.Instance != null)
-        {
-            BGMController.Instance.RewindBGM(amount);
-        }
-        else
-        {
-            Debug.LogWarning("BGMController.Instance is NULL. Cannot rewind BGM.");
-        }
+        Scene currentScene = SceneManager.GetActiveScene();
+        SceneManager.LoadScene(currentScene.name);
     }
 
-    private void SaveCheckpoint()
-    {
-        Vector3 savePosition;
-
-        if (checkpointPoint != null)
-        {
-            savePosition = checkpointPoint.position;
-        }
-        else if (player != null)
-        {
-            savePosition = player.position;
-        }
-        else
-        {
-            Debug.LogWarning("No player or checkpoint point assigned. Checkpoint not saved.");
-            return;
-        }
-
-        CountdownCheckpointData.SaveCheckpoint(savePosition);
-
-        Debug.Log("Countdown checkpoint saved at: " + savePosition);
-    }
-
-    private void UpdateTimerUI()
+    private void UpdateCountdownUI()
     {
         if (countdownText == null) return;
 
@@ -175,13 +175,23 @@ public class CountdownChallengeManager : MonoBehaviour
         countdownText.text = minutes.ToString("00") + ":" + seconds.ToString("00");
     }
 
-    private void RestartLevelFromCheckpoint()
+    // 给 ClockPickup 用：获得时钟后增加时间
+    public void AddTime(float amount)
     {
-        Time.timeScale = 1f;
+        currentTime += amount;
 
-        CountdownCheckpointData.PrepareRespawn();
+        // 音乐回退 amount 秒
+        if (countdownBGMSource != null)
+        {
+            countdownBGMSource.time = Mathf.Max(0f, countdownBGMSource.time - amount);
+        }
 
-        Scene currentScene = SceneManager.GetActiveScene();
-        SceneManager.LoadScene(currentScene.name);
+        UpdateCountdownUI();
+    }
+
+    // 保留这个方法名，防止你之前有其他脚本调用它
+    public void AddTimeAndRewindMusic(float amount)
+    {
+        AddTime(amount);
     }
 }
