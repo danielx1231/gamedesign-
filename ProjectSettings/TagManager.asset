@@ -8,6 +8,7 @@ TagManager:
   - DeadLine
   - Enemy
   - Ladder
+  - Background
   layers:
   - Default
   - TransparentFX
@@ -17,7 +18,7 @@ TagManager:
   - UI
   - Ground
   - Ladder
-  - 
+  - Background_Tile
   - 
   - 
   - 
@@ -47,6 +48,9 @@ TagManager:
     locked: 0
   - name: Background
     uniqueID: 2586653879
+    locked: 0
+  - name: background-Tile
+    uniqueID: 4069322799
     locked: 0
   - name: Midground
     uniqueID: 1423649761
