@@ -9,7 +9,18 @@ public class LevelDoor : MonoBehaviour
     [Header("Interaction")]
     public KeyCode interactKey = KeyCode.E;
 
+    [Header("UI Prompt")]
+    public GameObject promptPanel;
+
     private bool playerInRange = false;
+
+    private void Start()
+    {
+        if (promptPanel != null)
+        {
+            promptPanel.SetActive(false);
+        }
+    }
 
     private void Update()
     {
@@ -37,6 +48,11 @@ public class LevelDoor : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             playerInRange = true;
+
+            if (promptPanel != null)
+            {
+                promptPanel.SetActive(true);
+            }
         }
     }
 
@@ -45,6 +61,11 @@ public class LevelDoor : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             playerInRange = false;
+
+            if (promptPanel != null)
+            {
+                promptPanel.SetActive(false);
+            }
         }
     }
 }
