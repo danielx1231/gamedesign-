@@ -1,84 +1,110 @@
 ﻿using UnityEngine;
 using System.Collections;
 
+[RequireComponent(typeof(AudioSource))]
 public class BGMController : MonoBehaviour
 {
     public static BGMController Instance;
 
-    [Header("Audio")]
-    public AudioSource musicSource;
-    public AudioClip bgmBeforePuzzle;
-    public AudioClip bgmAfterPuzzle;
+    [Header("Audio Clips")]
+    public AudioClip beforePuzzleBGM;
+    public AudioClip afterPuzzleBGM;
 
-    [Header("Fade")]
-    public float fadeOutTime = 1.2f;
-    public float fadeInTime = 1.2f;
-    public float targetVolume = 0.35f;
+    [Header("Volume Settings")]
+    [Range(0f, 1f)]
+    public float bgmVolume = 0.35f;
 
-    private Coroutine routine;
+    [Header("Fade Settings")]
+    public float fadeDuration = 1f;
 
-    private void Awake()
+    private AudioSource audioSource;
+    private Coroutine fadeCoroutine;
+
+    void Awake()
     {
-        Instance = this; // ✅ 直接覆盖式赋值，保证不为null（单场景用很稳）
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
 
-        if (musicSource == null)
-            musicSource = GetComponent<AudioSource>();
+        Instance = this;
 
-        // 推荐由脚本控制播放，避免Inspector PlayOnAwake打架
-        if (musicSource != null)
-            musicSource.playOnAwake = false;
+        audioSource = GetComponent<AudioSource>();
+        audioSource.loop = false;
+        audioSource.playOnAwake = false;
     }
 
-    private void Start()
+    void Start()
     {
-        PlayInitialBGM();
-    }
-
-    private void PlayInitialBGM()
-    {
-        if (musicSource == null || bgmBeforePuzzle == null) return;
-
-        musicSource.clip = bgmBeforePuzzle;
-        musicSource.loop = true;
-        musicSource.volume = targetVolume;
-        musicSource.Play();
+        if (beforePuzzleBGM != null)
+        {
+            audioSource.clip = beforePuzzleBGM;
+            audioSource.volume = bgmVolume;
+            audioSource.Play();
+        }
     }
 
     public void SwitchToAfterPuzzleBGM()
     {
-        if (musicSource == null || bgmAfterPuzzle == null) return;
+        if (afterPuzzleBGM == null)
+        {
+            Debug.LogWarning("After puzzle BGM is not assigned.");
+            return;
+        }
 
-        if (routine != null) StopCoroutine(routine);
-        routine = StartCoroutine(FadeSwitch(bgmAfterPuzzle));
+        if (fadeCoroutine != null)
+        {
+            StopCoroutine(fadeCoroutine);
+        }
+
+        fadeCoroutine = StartCoroutine(SwitchBGMWithFade(afterPuzzleBGM));
     }
 
-    private IEnumerator FadeSwitch(AudioClip newClip)
+    private IEnumerator SwitchBGMWithFade(AudioClip newClip)
     {
-        // Fade out
-        float startVol = musicSource.volume;
         float t = 0f;
-        while (t < fadeOutTime)
+
+        while (t < fadeDuration)
         {
-            t += Time.deltaTime;
-            musicSource.volume = Mathf.Lerp(startVol, 0f, t / fadeOutTime);
+            t += Time.unscaledDeltaTime;
+            audioSource.volume = Mathf.Lerp(bgmVolume, 0f, t / fadeDuration);
             yield return null;
         }
-        musicSource.volume = 0f;
 
-        // Switch
-        musicSource.Stop();
-        musicSource.clip = newClip;
-        musicSource.loop = true;
-        musicSource.Play();
+        audioSource.volume = 0f;
+        audioSource.Stop();
 
-        // Fade in
+        audioSource.clip = newClip;
+        audioSource.time = 0f;
+        audioSource.Play();
+
         t = 0f;
-        while (t < fadeInTime)
+
+        while (t < fadeDuration)
         {
-            t += Time.deltaTime;
-            musicSource.volume = Mathf.Lerp(0f, targetVolume, t / fadeInTime);
+            t += Time.unscaledDeltaTime;
+            audioSource.volume = Mathf.Lerp(0f, bgmVolume, t / fadeDuration);
             yield return null;
         }
-        musicSource.volume = targetVolume;
+
+        audioSource.volume = bgmVolume;
+        fadeCoroutine = null;
+    }
+
+    public void RewindBGM(float seconds)
+    {
+        if (audioSource == null) return;
+        if (audioSource.clip == null) return;
+        if (!audioSource.isPlaying) return;
+
+        float newTime = audioSource.time - seconds;
+
+        if (newTime < 0f)
+        {
+            newTime = 0f;
+        }
+
+        audioSource.time = newTime;
     }
 }
